@@ -7,15 +7,19 @@ class TestProtocol(protocol.Protocol):
         
     def dataReceived(self, data):
         string = data.decode()
-        user = string.split()[0]
-        message = string[len(user):]
+        print(string)
+        splited = string.split()
+        user = splited[1]
+        message = ""
+        for i in splited[2:]:
+            message = message + " " + i;
         if string[0] != "0":
             for i in self.factory.connections:
-                i.transport.write((self.name + " "+ message).encode())
+                i.transport.write((user + " "+ message ).encode())
         else:
             self.name = string.split()[1]
             for i in self.factory.connections:
-                i.transport.write((string.split()[1]+" has connected to the network").encode())
+                i.transport.write((self.name+" has connected to the network").encode())
         
     def connectionMade(self):
         self.factory.connections.append(self)
