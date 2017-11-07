@@ -1,10 +1,12 @@
 import socket
 import names
 from tkinter import *
+from tkinter import ttk
 from PIL import ImageTk as imgtk
 from PIL import Image as img
-
-
+from tkinter.filedialog import askopenfilename
+from tkinter.messagebox import showerror
+from tkinter import ttk
 
 tk=Tk()
 
@@ -21,27 +23,38 @@ name=StringVar()
 name.set(my_name)
 text.set('')
 tk.title('Chat')
-tk.geometry('400x300')
 
-log = Text(tk)
-nick = Entry(tk, textvariable=name)
-msg = Entry(tk, textvariable=text)
+l = Listbox(tk, height = 10, width = 100)
+l.grid(column=0, row=0, sticky=(N,W,E,S))
+s = Scrollbar(tk, orient=VERTICAL, command=l.yview)
+s.grid(column=1, row=0, sticky=(N,S))
+l['yscrollcommand'] = s.set
 
-msg.pack(side='bottom', fill='x', expand='true')
-nick.pack(side='bottom', fill='x', expand='true')
-log.pack(side='top', fill='both',expand='true')
-def hi(event):
-   log.see(END)
-   log.insert(END,"hi")
+ttk.Sizegrip().grid(column=1, row=1, sticky=(S,E))
+tk.grid_columnconfigure(0, weight=1)
+tk.grid_rowconfigure(0, weight=1)
+
+nick = Label(tk, textvariable=name)
+msg = Entry(tk, width = 100,textvariable=text)
+
+msg.grid(sticky = (S,E))
+nick.grid(sticky=(S))
+
+def load_file():
+        fname = askopenfilename()
+        if fname:
+            try:
+                print("You want to open "+ fname+ "file")
+            except:                     # <- naked except is a bad idea
+                showerror("Open Source File", "Failed to read file\n'%s'" % fname)
+            return
+         
 def loopproc():
-  log.see(END)
   sock.setblocking(False)
   try:
     message = sock.recv(128).decode()
-    print(message)
     user = message.split()[0]
-    message = message[len(user):]
-    log.insert(END,user + ": "+ message + '\n')
+    l.insert('end',user + ": "+ message[len(user):] + '\n')
   except:
     tk.after(1,loopproc)
     return
@@ -49,17 +62,21 @@ def loopproc():
   return
 
 def sendproc(event):
-  sock.sendto (("1 "+''.join(name.get().split())+' '+text.get()).encode(),('127.0.0.1',5555))
+  sock.sendto (("1 "+ my_name+' '+text.get()).encode(),('127.0.0.1',5555))
   text.set('')
+  
 
-myimg = img.open('test.gif')
-myimg = myimg.resize((100, 100), img.ANTIALIAS)
-newImg = imgtk.PhotoImage(myimg)
-content = Label(tk, image=newImg)
+#myimg = img.open('test.gif')
+#myimg = myimg.resize((100, 100), img.ANTIALIAS)
+#newImg = imgtk.PhotoImage(myimg)
+#content = Label(tk, image=newImg)
 #content.place(x=0, y=0);
-msg.bind('<Return>',sendproc)
-msg.bind('z',hi)
-msg.focus_set()
 
+btn_send_file = Button(tk ,text="Browse", command= load_file, width=15)
+btn_send_message = Button(tk ,text="Send Message", command= sendproc, width=15)
+msg.bind('<Return>',sendproc)
+msg.focus_set()
+btn_send_file.grid(sticky = (S,E))
+btn_send_message.grid(sticky = (S,E))
 tk.after(1,loopproc)
 tk.mainloop()
