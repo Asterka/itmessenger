@@ -15,7 +15,7 @@ tk=Tk()
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect(('127.0.0.1', 12344));
 my_name = names.get_first_name()
-sock.sendto (("0 "+ my_name).encode(),('127.0.0.1',5555))
+sock.sendto (("0 "+ my_name).encode(),('127.0.0.1',12344))
 
 text=StringVar()
 name=StringVar()
@@ -78,5 +78,6 @@ msg.bind('<Return>',sendproc)
 msg.focus_set()
 btn_send_file.grid(sticky = (S,E))
 btn_send_message.grid(sticky = (S,E))
+btn_send_message.bind('<Button-1>', sendproc);
 tk.after(1,loopproc)
 tk.mainloop()
