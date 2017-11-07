@@ -62,7 +62,7 @@ def loopproc():
   return
 
 def sendproc(event):
-  sock.sendto (("1 "+ my_name+' '+text.get()).encode(),('127.0.0.1',5555))
+  sock.sendto (("1 "+ my_name+' '+text.get()).encode(),('127.0.0.1',12344))
   text.set('')
   
 
