@@ -55,13 +55,12 @@ def loopproc():
     data = sock.recv(128)
     #add message type check here
     opcode = data[0:4]
-    print(str(opcode))
+    print(opcode)
     message = ""
     user = ""
-    if opcode != b"0100":
-        message = data[4:].decode()
-        user = message.split()[0]
-        
+    message = data[4:].decode()
+    user = message.split()[0]
+    global isBusy
     #connected/disconnected users
     if opcode == b"0000":
       l.insert('end',user + " has connected to the network" + '\n')
@@ -73,9 +72,14 @@ def loopproc():
       print("here")
       l.insert('end',user + ": "+ message[len(user)+2:] + '\n')
       
-    if opcode == b"0010":
+    if opcode == b"0100":
+        isBusy = True
+        l.insert('end',user + " is now sending a file" + '\n')
+        
+    if opcode == b"0101":
+      isBusy = False
       btn = Button(tk ,text="File", command = load_file_from_server, width=15)
-      l.insert('end',"File has been uploaded")
+      l.insert('end',user + " has sent a file" + '\n')
       l.window_create('end', window=btn)
       l.insert('end',"\n")
       
@@ -88,24 +92,31 @@ def loopproc():
 
 def send_text(event):
   my_name = name.get()
-  sock.sendto (b'0001'+(my_name+' '+text.get()).encode(),('127.0.0.1',12344))
+  global isBusy
+  if isBusy == False:
+        sock.sendto (b'0001'+(my_name+' '+text.get()).encode(),('127.0.0.1',12344))
+  else:
+     l.insert('end',"Sorry, you cannnot send messages while file is being sent" + '\n')   
   text.set('')
 def send_file(event, filepath):
-  filename, file_extension = os.path.splitext(filepath)
-  send_name = filepath.split('/')[-1]
-  f = open(filepath, "rb")
-  buffer = f.read()
-  print(len(buffer))
-  f.close()
-  sock.sendto (b'0010'+(file_extension + str(len(buffer))).encode(),('127.0.0.1',12344))
-  time.sleep(1)
-  sock.sendto (buffer, ('127.0.0.1',12344))
+  if isBusy == False:
+          filename, file_extension = os.path.splitext(filepath)
+          send_name = filepath.split('/')[-1]
+          f = open(filepath, "rb")
+          buffer = f.read()
+          print(len(buffer))
+          f.close()
+          sock.sendto (b'0010'+(file_extension + str(len(buffer))).encode(),('127.0.0.1',12344))
+          time.sleep(0.2)
+          sock.sendto (buffer, ('127.0.0.1',12344))
+  else:
+           l.insert('end',"Sorry, you cannnot send files while file is being sent" + '\n')
 #myimg = img.open('test.gif')
 #myimg = myimg.resize((100, 100), img.ANTIALIAS)
 #newImg = imgtk.PhotoImage(myimg)
 #l.image_create('end',image=newImg)
 
-
+isBusy =  False
 msg.bind('<Return>',send_text)
 msg.focus_set()
 
