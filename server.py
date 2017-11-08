@@ -8,49 +8,57 @@ class TestProtocol(protocol.Protocol):
         self.factory = factory
         
     def dataReceived(self, data):
-        opcode = data[0:4]
-        data = data[4:]
-        buffer = []
-        #print(str(opcode))
-        message = ""
-        string = ""
-        user = ""
-        splited = []
-        
-        if opcode == b"0100":
-            self.factory.file_size = data.decode();
-            print(self.factory.file_size)
-            
-        if opcode != b'0010' and self.factory.transfer == False:
-            string = data.decode()
-            splited = string.split()
-            user = splited[0]
+        print(self.factory.transfer)
+        if self.factory.transfer == True:
+            self.factory.file_buffer += data
+            print(len(self.factory.file_buffer))
+            if len(self.factory.file_buffer) >= self.factory.filesize:
+                print("Ready")
+                f = open(self.factory.filename, 'wb')
+                f.write(bytes(self.factory.file_buffer))
+                f.close()
+                self.factory.file_buffer = []
+                self.factory.filesize = 0
+                self.factory.transfer = False
+            else:
+                print(str(len(self.factory.file_buffer))+ " " + str(self.factory.filesize))
         else:
-            ext = data[0:4].decode()
-            buffer = data[4:]
-            
-        for i in splited[1:]:
-            message = message + " " + i;
-            
-        if opcode == b"0001":
-            for i in self.factory.connections:
-                i.transport.write(b"0001"+(user + " "+ message ).encode())
-        
-        if opcode == b"0010":
-            self.factory.transfer = True
-            filename = str(math.floor(time.time())) + ext
-            print(self.factory.transfer)
-            file = open(filename,"wb")
-            
-            file.write(buffer);
-            for i in self.factory.connections:
-                i.transport.write(b"0010"+(filename).encode())
+            opcode = data[0:4]
+            message = ""
+            string = ""
+            user = ""
+            splited = []
+            buffer = []
+            data = data[4:]
+            if opcode != b'0010':
+                string = data.decode()
+                splited = string.split()
+                user = splited[0]
+            else:
+                ext = data[0:4].decode()
+                buffer = data[4:]
                 
-        if opcode == b"0000":   
-            self.name = data.decode()
-            #print(self.name)
-            for i in self.factory.connections:
-                i.transport.write(b"0000"+(self.name).encode())
+            for i in splited[1:]:
+                message = message + " " + i;
+                
+            if opcode == b"0001":
+                for i in self.factory.connections:
+                    i.transport.write(b"0001"+(user + " "+ message ).encode())
+            
+            if opcode == b"0010":
+                self.factory.transfer = True
+
+                self.factory.filesize = int(buffer.decode())
+                print(str(self.factory.transfer) + " here "+ str(self.factory.filesize))
+                self.factory.filename = str(math.floor(time.time())) + ext
+
+                pass
+                    
+            if opcode == b"0000":   
+                self.name = data.decode()
+                #print(self.name)
+                for i in self.factory.connections:
+                    i.transport.write(b"0000"+(self.name).encode())
         
     def connectionMade(self):
         self.factory.connections.append(self)
@@ -66,10 +74,13 @@ class TestProtocol(protocol.Protocol):
         
 class TestFactory(protocol.Factory):
     number = 0
+    filesize = 0
     transfer = False
+    file = None
+    filename = ""
     connections = []
     file_buffer = []
-    file_size = 0
+    
     def __init__(self, num=0):
         self.num = num
     def buildProtocol(self, adress):
