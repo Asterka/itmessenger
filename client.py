@@ -8,7 +8,7 @@ from tkinter.filedialog import askopenfilename
 from tkinter.messagebox import showerror
 from tkinter import ttk
 import os
-
+import time
 tk=Tk()
 
 
@@ -95,11 +95,11 @@ def send_file(event, filepath):
   send_name = filepath.split('/')[-1]
   f = open(filepath, "rb")
   buffer = f.read()
+  print(len(buffer))
   f.close()
-  sock.sendto (b'0010'+(file_extension).encode(),('127.0.0.1',12344))
-  sock.sendto(b'0100' + bytes(len(buffer)),('127.0.0.1',12344))
-  sock.sendto(buffer ,('127.0.0.1',12344))
-
+  sock.sendto (b'0010'+(file_extension + str(len(buffer))).encode(),('127.0.0.1',12344))
+  time.sleep(1)
+  sock.sendto (buffer, ('127.0.0.1',12344))
 #myimg = img.open('test.gif')
 #myimg = myimg.resize((100, 100), img.ANTIALIAS)
 #newImg = imgtk.PhotoImage(myimg)
